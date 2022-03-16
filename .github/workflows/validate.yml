@@ -1,0 +1,22 @@
+name: "Validate"
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Validate Packer files
+        uses: hashicorp/packer-github-actions@v0.2.0
+        with:
+          command: validate
+
+      - name: Format Packer files
+        uses: hashicorp/packer-github-actions@v0.2.0
+        with:
+          command: fmt
