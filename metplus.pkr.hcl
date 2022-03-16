@@ -36,7 +36,7 @@ data "amazon-ami" "centos7-east" {
 
 source "amazon-ebs" "centos7-latest" {
   ami_name      = "metplus-centos7-aws-{{ timestamp }}"
-  instance_type = "t2.micro"
+  instance_type = "t2.small"
   ssh_username  = "centos"
   region        = "us-east-1"
   source_ami    = data.amazon-ami.centos7-east.id
@@ -77,37 +77,86 @@ build {
   sources = [
     "source.amazon-ebs.centos7-latest"
   ]
-  # Inline install commands inspired by the MET Dockerfile here: https://github.com/dtcenter/MET/blob/main_v10.0/scripts/docker/Dockerfile
+  # Install inspired by the MET Dockerfile here: https://github.com/dtcenter/MET/blob/main_v10.0/scripts/docker/Dockerfile
   provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
     inline = [
-      "echo Installing required packages",
+      "echo \"Installing required packages\"",
       "sudo yum -y update",
-      "sudo yum -y install file gcc gcc-gfortran gcc-c++ glibc.i686 libgcc.i686 libpng-devel jasper jasper-devel zlib zlib-devel cairo-devel freetype-devel epel-release hostname m4 make tar tcsh ksh time wget which flex flex-devel bison bison-devel unzip",
+      "sudo yum -y install file gcc gcc-gfortran gcc-c++ glibc.i686 libgcc.i686 libpng-devel jasper jasper-devel zlib zlib-devel cairo-devel freetype-devel epel-release hostname m4 make tar tcsh ksh time which wget flex flex-devel bison bison-devel unzip",
       "sudo yum -y install git g2clib-devel hdf5-devel.x86_64 gsl-devel",
       "sudo yum -y install gv ncview wgrib wgrib2 ImageMagick ps2pdf",
       "sudo yum -y install python3 python3-devel python3-pip",
       "sudo pip3 install --upgrade pip",
-      "sudo python3 -m pip install numpy xarray netCDF4",
-      "echo Done Installing packages"
+      "sudo python3 -m pip install numpy xarray netCDF4", #dateutil? 
+      # NOTE - user will need to set MET_PYTHON_EXE if they use conda (conda activate <env> && which python)
+      "echo \"Done Installing packages\""
     ]
   }
   provisioner "file" {
-    source      = "install_met_env.centos_aws"
+    source      = "METconfig/install_met_env.centos_aws"
     destination = "/tmp/install_met_env.centos_aws"
   }
   provisioner "shell" {
-    # inline_shebang = "/bin/bash -e"
+    inline_shebang = "/bin/bash -e"
     inline = [
-      "echo Install MET",
-      "sudo mkdir -p /met/tar_files && cd /met",
-      "sudo mv /tmp/install_met_env.centos_aws /met/ && sudo chmod +x /met/install_met_env.centos_aws",
-      "sudo wget https://raw.githubusercontent.com/dtcenter/MET/develop/scripts/installation/compile_MET_all.sh",
+      "echo \"Install MET\"",
+      "sudo mkdir -p /opt/met/tar_files && cd /opt/met",
+      "sudo mv /tmp/install_met_env.centos_aws /opt/met/ && sudo chmod +x /opt/met/install_met_env.centos_aws",
+      "sudo wget https://raw.githubusercontent.com/dtcenter/MET/main_v10.1/scripts/installation/compile_MET_all.sh",
       "sudo chmod 775 compile_MET_all.sh",
       "sudo wget https://dtcenter.ucar.edu/dfiles/code/METplus/MET/installation/tar_files.tgz",
       "sudo tar -zxf tar_files.tgz && sudo rm tar_files.tgz",
-      "sudo wget -P /met/tar_files https://github.com/dtcenter/MET/releases/download/v10.0.1/met-10.0.1.20211201.tar.gz",
+      "sudo wget -P /opt/met/tar_files https://github.com/dtcenter/MET/releases/download/v10.1.0/met-10.1.0.20220314.tar.gz",
       "sudo bash compile_MET_all.sh install_met_env.centos_aws",
-      "echo Done Installing MET"
+      "echo \"Done Installing MET\""
+    ]
+  }
+  # User Setup
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Installing editors & s3fs-fuse\"",
+      "sudo yum -y install epel-release",
+      "sudo yum -y install vim nano emacs",
+      "sudo yum -y install s3fs-fuse",
+      "echo \"Done Installing editors & s3fs-fuse\"",
+    ]
+  }
+  # TODO - create other users and do the below as them
+  provisioner "file" {
+    sources     = ["METconfig/Externals.cfg", "METconfig/defaults.conf"]
+    destination = "/tmp/"
+  }
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Install METplus\"",
+      "echo $(pwd) && cd $HOME", # TODO - delete
+      "git clone https://github.com/dtcenter/METplus",
+      # Copy our patched Externals.cfg into place
+      "cp /tmp/Externals.cfg $HOME/METplus/build_components/Externals.cfg",
+      # METplus looks for the defaults.conf file using a relative path
+      "cp /tmp/defaults.conf $HOME/METplus/parm/metplus_config/defaults.conf",
+      # TODO - switch to develop branch? https://metplus.readthedocs.io/en/latest/Contributors_Guide/github_workflow.html
+      "cd METplus && manage_externals/checkout_externals -e build_components/Externals.cfg",
+      "mkdir $HOME/metplus-output",
+      "echo \"Done Installing METplus\""
+    ]
+  }
+  # Install Miniconda & metplus dependencies
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Installing miniconda\"",
+      "wget -P /tmp https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh",
+      "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
+      "source $HOME/miniconda/bin/activate && conda init",
+      # TODO: Set up conda py_embed_base environments & activate in user's .bashrc
+      # "bash ~/metplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      # "conda activate py_embed_base",
+      # "conda env list",
+      "echo \"Done installing miniconda\""
     ]
   }
 }

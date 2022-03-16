@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Inspired by: https://github.com/dtcenter/MET/blob/develop/scripts/installation/config/install_met_env.generic
+
+#Required
+export TEST_BASE=/opt/met
+
+#Required
+#Compiler options = gnu, intel, ics, ips, PrgEnv-intel, or pgi
+#Compiler+version can be used for machines using modules e.g. gnu_6.3.0
+export COMPILER=gnu
+
+#Required
+#Root directory for creating/untaring met source code - usually same as TEST_BASE
+export MET_SUBDIR=${TEST_BASE}
+
+#Required
+#The name of the met tarbal usually downloaded with version from github.com/dtcenter/MET and includes a version
+# example - met-9.0.1.20200423.tar.gz
+export MET_TARBALL=met-10.1.0.20220314.tar.gz
+
+#Required
+#Specifiy if machine useds modules for loading software
+export USE_MODULES=FALSE
+
+#Root directory of your python install
+export PYTHON_LOC="$(python3-config --prefix)"
+
+#Directory of your python executable
+export MET_PYTHON=$(python3-config --prefix)
+
+#Python ldflags created using python3-config
+export MET_PYTHON_LD="$(python3-config --ldflags)"
+
+#Python cflags created using python3-config
+export MET_PYTHON_CC="$(python3-config --cflags)"
+
+#64 bit machine or not - compile_all_met.sh compiles as 32 bit
+export SET_D64BIT=FALSE
