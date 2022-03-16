@@ -159,4 +159,16 @@ build {
       "echo \"Done installing miniconda\""
     ]
   }
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Setting up data\"",
+      "sudo mkdir -p /metplus-data/model_applications/s2s",
+      "sudo mkdir -p /metplus-data/met_test",
+      "sudo mkdir -p /metplus-data/hackathon",
+      "sudo wget -P /metplus-data/hackathon https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
+      "wget -q0- https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar xzv -C /metplus-data/model_applications/s2s",
+      "echo \"Done Setting up data\""
+    ]
+  }
 }
