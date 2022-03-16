@@ -1,6 +1,8 @@
 name: "Validate"
-on:
-  push:
+on: 
+  push: 
+    branches:
+    - main
   pull_request:
 
 jobs:
@@ -12,11 +14,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Validate Packer files
-        uses: hashicorp/packer-github-actions@v0.2.0
+        uses: hashicorp/packer-github-actions@master
         with:
           command: validate
+          arguments: -syntax-only
+          target: metplus.pkr.hcl
 
       - name: Format Packer files
-        uses: hashicorp/packer-github-actions@v0.2.0
+        uses: hashicorp/packer-github-actions@master
         with:
           command: fmt
+          arguments: "-check -diff"
+          target: metplus.pkr.hcl
