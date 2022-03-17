@@ -150,10 +150,14 @@ build {
       "wget -P /tmp https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh",
       "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
       "source $HOME/miniconda/bin/activate && conda init",
-      # TODO: Set up conda py_embed_base environments & activate in user's .bashrc
-      # "bash ~/metplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
-      # "conda activate py_embed_base",
-      # "conda env list",
+      # Set up conda py_embed_base environment
+      "bash ~/metplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      # Activate conda env in user's .bashrc
+      "echo \"conda activate py_embed_base\" >> $HOME/.bashrc",
+      # Tell MET to use miniconda Python
+      "echo \"export MET_PYTHON_EXE=$(which python)\" >> $HOME/.bashrc",
+      # Put met & metplus on PATH
+      "echo \"export PATH=/opt/met/bin:$HOME/METplus/ufs:$PATH\" >> $HOME/.bashrc",
       "echo \"Done installing miniconda\""
     ]
   }
