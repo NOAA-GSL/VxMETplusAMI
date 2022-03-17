@@ -31,7 +31,6 @@ data "amazon-ami" "centos7-east" {
   }
   most_recent = true
   owners      = ["125523088429"] # Official CentOS Account
-  # owners      = ["679593333241"] # AWS Marketplace maybe?
 }
 
 source "amazon-ebs" "centos7-latest" {
