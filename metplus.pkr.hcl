@@ -35,7 +35,7 @@ data "amazon-ami" "centos7-east" {
 
 source "amazon-ebs" "centos7-latest" {
   ami_name      = "metplus-centos7-aws-{{ timestamp }}"
-  instance_type = "t2.small"
+  instance_type = "t3.small"
   ssh_username  = "centos"
   region        = "us-east-1"
   source_ami    = data.amazon-ami.centos7-east.id
