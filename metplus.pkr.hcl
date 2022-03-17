@@ -31,12 +31,11 @@ data "amazon-ami" "centos7-east" {
   }
   most_recent = true
   owners      = ["125523088429"] # Official CentOS Account
-  # owners      = ["679593333241"] # AWS Marketplace maybe?
 }
 
 source "amazon-ebs" "centos7-latest" {
   ami_name      = "metplus-centos7-aws-{{ timestamp }}"
-  instance_type = "t2.small"
+  instance_type = "t3.small"
   ssh_username  = "centos"
   region        = "us-east-1"
   source_ami    = data.amazon-ami.centos7-east.id
@@ -116,11 +115,14 @@ build {
   provisioner "shell" {
     inline_shebang = "/bin/bash -e"
     inline = [
-      "echo \"Installing editors & s3fs-fuse\"",
+      "echo \"Installing editors & goofys\"",
       "sudo yum -y install epel-release",
       "sudo yum -y install vim nano emacs",
-      "sudo yum -y install s3fs-fuse",
-      "echo \"Done Installing editors & s3fs-fuse\"",
+      "sudo yum -y install xorg-x11-xauth", # enable X11 forwarding
+      # "sudo yum -y install s3fs-fuse",  # s3fs-fuse gave weird directory traversal errors - use goofys instead
+      "sudo yum -y install fuse fuse-libs", # Make fuse available for goofys
+      "sudo wget -P /usr/local/bin https://github.com/kahing/goofys/releases/download/v0.24.0/goofys && chmod +x /usr/local/bin/goofys",
+      "echo \"Done Installing editors & goofys\"",
     ]
   }
   # TODO - create other users and do the below as them
@@ -152,10 +154,14 @@ build {
       "wget -P /tmp https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh",
       "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
       "source $HOME/miniconda/bin/activate && conda init",
-      # TODO: Set up conda py_embed_base environments & activate in user's .bashrc
-      # "bash ~/metplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
-      # "conda activate py_embed_base",
-      # "conda env list",
+      # Set up conda py_embed_base environment
+      "bash ~/metplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      # Activate conda env in user's .bashrc
+      "echo \"conda activate py_embed_base\" >> $HOME/.bashrc",
+      # Tell MET to use miniconda Python
+      "echo \"export MET_PYTHON_EXE=$(which python)\" >> $HOME/.bashrc",
+      # Put met & metplus on PATH
+      "echo \"export PATH=/opt/met/bin:$HOME/METplus/ufs:$PATH\" >> $HOME/.bashrc",
       "echo \"Done installing miniconda\""
     ]
   }
@@ -165,9 +171,19 @@ build {
       "echo \"Setting up data\"",
       "sudo mkdir -p /metplus-data/model_applications/s2s",
       "sudo mkdir -p /metplus-data/met_test",
-      "sudo mkdir -p /metplus-data/hackathon",
-      "sudo wget -P /metplus-data/hackathon https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
+      "sudo mkdir -p /metplus-data/hackathon/olr /metplus-data/hackathon/ufs-s2s /metplus-data/hackathon/era5 /metplus-data/hackathon/gefs",
+      # OLR dataset
+      "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
+      # METplus S2S use case sample data
       "wget -q0- https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar xzv -C /metplus-data/model_applications/s2s",
+      # Add BDP datasets 
+      # For explanation of options, see: https://github.com/kahing/goofys 
+      # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
+      "echo \"goofys#noaa-ufs-prototypes-pds /metplus-data/hackathon/ufs-s2s fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
+      # ERA 5 data: https://registry.opendata.aws/ecmwf-era5/
+      "echo \"goofys#era5-pds /metplus-data/hackathon/era5 fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
+      # GEFS re-forecast data: https://registry.opendata.aws/noaa-gefs-reforecast/#usageexamples 
+      "echo \"goofys#noaa-gefs-retrospective /metplus-data/hackathon/gefs fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
       "echo \"Done Setting up data\""
     ]
   }
