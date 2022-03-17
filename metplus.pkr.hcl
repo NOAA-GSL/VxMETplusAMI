@@ -118,8 +118,7 @@ build {
       "echo \"Installing editors & s3fs-fuse\"",
       "sudo yum -y install epel-release",
       "sudo yum -y install vim nano emacs",
-      "sudo yum -y install s3fs-fuse",
-      "echo \"Done Installing editors & s3fs-fuse\"",
+      "sudo yum -y install xorg-x11-xauth", # enable X11 forwarding
     ]
   }
   # TODO - create other users and do the below as them
