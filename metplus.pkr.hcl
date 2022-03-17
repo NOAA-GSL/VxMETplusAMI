@@ -17,7 +17,7 @@ data "amazon-ami" "amazon-linux-2-east" {
     architecture        = "x86_64"
   }
   most_recent = true
-  owners      = ["137112412989"]
+  owners      = ["137112412989"] # AWS account
 }
 
 data "amazon-ami" "centos7-east" {
@@ -121,7 +121,7 @@ build {
       "sudo yum -y install xorg-x11-xauth", # enable X11 forwarding
       # "sudo yum -y install s3fs-fuse",  # s3fs-fuse gave weird directory traversal errors - use goofys instead
       "sudo yum -y install fuse fuse-libs", # Make fuse available for goofys
-      "sudo wget -P /usr/local/bin https://github.com/kahing/goofys/releases/download/v0.24.0/goofys && chmod +x /usr/local/bin/goofys",
+      "sudo wget -P /usr/local/bin https://github.com/kahing/goofys/releases/download/v0.24.0/goofys && sudo chmod +x /usr/local/bin/goofys",
       "echo \"Done Installing editors & goofys\"",
     ]
   }
@@ -134,7 +134,6 @@ build {
     inline_shebang = "/bin/bash -e"
     inline = [
       "echo \"Install METplus\"",
-      "echo $(pwd) && cd $HOME", # TODO - delete
       "git clone https://github.com/dtcenter/METplus",
       # Copy our patched Externals.cfg into place
       "cp /tmp/Externals.cfg $HOME/METplus/build_components/Externals.cfg",
@@ -155,13 +154,13 @@ build {
       "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
       "source $HOME/miniconda/bin/activate && conda init",
       # Set up conda py_embed_base environment
-      "bash ~/metplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      "bash $HOME/METplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
       # Activate conda env in user's .bashrc
       "echo \"conda activate py_embed_base\" >> $HOME/.bashrc",
       # Tell MET to use miniconda Python
       "echo \"export MET_PYTHON_EXE=$(which python)\" >> $HOME/.bashrc",
-      # Put met & metplus on PATH
-      "echo \"export PATH=/opt/met/bin:$HOME/METplus/ufs:$PATH\" >> $HOME/.bashrc",
+      # Put MET & METplus on PATH
+      "echo \"export PATH=/opt/met/bin:$HOME/METplus/ush:$PATH\" >> $HOME/.bashrc",
       "echo \"Done installing miniconda\""
     ]
   }
@@ -175,7 +174,7 @@ build {
       # OLR dataset
       "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
       # METplus S2S use case sample data
-      "wget -q0- https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar xzv -C /metplus-data/model_applications/s2s",
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv - -C /metplus-data/model_applications/s2s",
       # Add BDP datasets 
       # For explanation of options, see: https://github.com/kahing/goofys 
       # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
