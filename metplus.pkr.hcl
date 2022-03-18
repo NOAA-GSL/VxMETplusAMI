@@ -177,13 +177,12 @@ build {
     inline_shebang = "/bin/bash -e"
     inline = [
       "echo \"Setting up data\"",
-      "sudo mkdir -p /metplus-data/model_applications/s2s",
       "sudo mkdir -p /metplus-data/met_test",
       "sudo mkdir -p /metplus-data/hackathon/olr /metplus-data/hackathon/ufs-s2s /metplus-data/hackathon/era5 /metplus-data/hackathon/gefs",
       # OLR dataset
       "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
       # METplus S2S use case sample data
-      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv -C /metplus-data/model_applications/s2s",
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv -C /metplus-data",
       # Add BDP datasets 
       # For explanation of options, see: https://github.com/kahing/goofys 
       # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
