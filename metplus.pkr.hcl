@@ -56,10 +56,10 @@ source "amazon-ebs" "centos7-latest" {
   subnet_id          = var.subnet_id
   security_group_ids = var.security_group_ids
   launch_block_device_mappings {
-      device_name = "/dev/sda1" # reserved root name
-      volume_size = 40
-      volume_type = "gp2"
-      delete_on_termination = true
+    device_name           = "/dev/sda1" # reserved root name
+    volume_size           = 40
+    volume_type           = "gp2"
+    delete_on_termination = true
   }
   run_volume_tags = merge({
     "Base_AMI_ID"   = "{{ .SourceAMI }}"
@@ -183,7 +183,7 @@ build {
       # OLR dataset
       "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
       # METplus S2S use case sample data
-      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv - -C /metplus-data/model_applications/s2s",
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv -C /metplus-data/model_applications/s2s",
       # Add BDP datasets 
       # For explanation of options, see: https://github.com/kahing/goofys 
       # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
