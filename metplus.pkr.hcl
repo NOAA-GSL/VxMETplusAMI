@@ -7,6 +7,20 @@ packer {
   }
 }
 
+variable "subnet_id" {
+  type = string
+}
+
+variable "security_group_ids" {
+  type = list(string)
+  # The instance needs inbound SSH access from your system and outbound access to the internet
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+
 data "amazon-ami" "amazon-linux-2-east" {
   # ssh_username = ec2-user
   region = "us-east-1"
@@ -34,37 +48,32 @@ data "amazon-ami" "centos7-east" {
 }
 
 source "amazon-ebs" "centos7-latest" {
-  ami_name      = "metplus-centos7-aws-{{ timestamp }}"
-  instance_type = "t3.small"
-  ssh_username  = "centos"
-  region        = "us-east-1"
-  source_ami    = data.amazon-ami.centos7-east.id
-  subnet_id     = "subnet-010d4fe54e66b6ed2" # Subnet 1b public
-  security_group_ids = [
-    "sg-0392385c9daedc571", # gsl_inbound_ssh.id,
-    "sg-0eb84211ccf1f7c07", # aws_inbound_ssh.id,
-    "sg-0c8b5daa04f90d381", # aws_outbound_anywhere.id
-  ]
-  run_volume_tags = {
-    "noaa:oar:gsl:vx:project" = "metplus-hackathon-2022"
-    "noaa:oar:gsl:projectid"  = "2021-1-AVID-metexpress"
-    "Project"                 = "AVID"
+  ami_name           = "metplus-centos7-aws-{{ timestamp }}"
+  instance_type      = "t3.xlarge"
+  ssh_username       = "centos"
+  region             = "us-east-1"
+  source_ami         = data.amazon-ami.centos7-east.id
+  subnet_id          = var.subnet_id
+  security_group_ids = var.security_group_ids
+  launch_block_device_mappings {
+    device_name           = "/dev/sda1" # reserved root name
+    volume_size           = 40
+    volume_type           = "gp2"
+    delete_on_termination = true
   }
-  run_tags = { # Tags for the instance used to create AMI
-    "noaa:oar:gsl:vx:project" = "metplus-hackathon-2022"
-    "noaa:oar:gsl:projectid"  = "2021-1-AVID-metexpress"
-    "Project"                 = "AVID"
-    "Base_AMI_ID"             = "{{ .SourceAMI }}"
-    "Base_AMI_Name"           = "{{ .SourceAMIName }}"
-  }
-  tags = { # Tags for the AMI
-    "noaa:oar:gsl:vx:project" = "metplus-hackathon-2022"
-    "noaa:oar:gsl:projectid"  = "2021-1-AVID-metexpress"
-    "Project"                 = "AVID"
-    "Base_AMI_ID"             = "{{ .SourceAMI }}"
-    "Base_AMI_Name"           = "{{ .SourceAMIName }}"
-    "Name"                    = "METPlus Hackathon"
-  }
+  run_volume_tags = merge({
+    "Base_AMI_ID"   = "{{ .SourceAMI }}"
+    "Base_AMI_Name" = "{{ .SourceAMIName }}"
+  }, var.tags)
+  run_tags = merge({ # Tags for the instance used to create AMI
+    "Base_AMI_ID"   = "{{ .SourceAMI }}"
+    "Base_AMI_Name" = "{{ .SourceAMIName }}"
+  }, var.tags)
+  tags = merge({ # Tags for the AMI
+    "Base_AMI_ID"   = "{{ .SourceAMI }}"
+    "Base_AMI_Name" = "{{ .SourceAMIName }}"
+    "Name"          = "METPlus Hackathon"
+  }, var.tags)
 }
 
 # NOTE - if this gets lengthy it may make sense to split this into a sources.pkr.hcl
@@ -88,7 +97,6 @@ build {
       "sudo yum -y install python3 python3-devel python3-pip",
       "sudo pip3 install --upgrade pip",
       "sudo python3 -m pip install numpy xarray netCDF4", #dateutil? 
-      # NOTE - user will need to set MET_PYTHON_EXE if they use conda (conda activate <env> && which python)
       "echo \"Done Installing packages\""
     ]
   }
@@ -119,7 +127,6 @@ build {
       "sudo yum -y install epel-release",
       "sudo yum -y install vim nano emacs",
       "sudo yum -y install xorg-x11-xauth", # enable X11 forwarding
-      # "sudo yum -y install s3fs-fuse",  # s3fs-fuse gave weird directory traversal errors - use goofys instead
       "sudo yum -y install fuse fuse-libs", # Make fuse available for goofys
       "sudo wget -P /usr/local/bin https://github.com/kahing/goofys/releases/download/v0.24.0/goofys && sudo chmod +x /usr/local/bin/goofys",
       "echo \"Done Installing editors & goofys\"",
@@ -168,13 +175,12 @@ build {
     inline_shebang = "/bin/bash -e"
     inline = [
       "echo \"Setting up data\"",
-      "sudo mkdir -p /metplus-data/model_applications/s2s",
       "sudo mkdir -p /metplus-data/met_test",
       "sudo mkdir -p /metplus-data/hackathon/olr /metplus-data/hackathon/ufs-s2s /metplus-data/hackathon/era5 /metplus-data/hackathon/gefs",
       # OLR dataset
       "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
       # METplus S2S use case sample data
-      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv - -C /metplus-data/model_applications/s2s",
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv -C /metplus-data",
       # Add BDP datasets 
       # For explanation of options, see: https://github.com/kahing/goofys 
       # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
