@@ -97,7 +97,6 @@ build {
       "sudo yum -y install python3 python3-devel python3-pip",
       "sudo pip3 install --upgrade pip",
       "sudo python3 -m pip install numpy xarray netCDF4", #dateutil? 
-      # NOTE - user will need to set MET_PYTHON_EXE if they use conda (conda activate <env> && which python)
       "echo \"Done Installing packages\""
     ]
   }
@@ -128,7 +127,6 @@ build {
       "sudo yum -y install epel-release",
       "sudo yum -y install vim nano emacs",
       "sudo yum -y install xorg-x11-xauth", # enable X11 forwarding
-      # "sudo yum -y install s3fs-fuse",  # s3fs-fuse gave weird directory traversal errors - use goofys instead
       "sudo yum -y install fuse fuse-libs", # Make fuse available for goofys
       "sudo wget -P /usr/local/bin https://github.com/kahing/goofys/releases/download/v0.24.0/goofys && sudo chmod +x /usr/local/bin/goofys",
       "echo \"Done Installing editors & goofys\"",
