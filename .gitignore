@@ -6,3 +6,6 @@ crash.log
 
 # For built boxes
 *.box
+
+# Ignore Packer variable files
+*.pkrvars.hcl
