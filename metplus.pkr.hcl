@@ -152,6 +152,10 @@ build {
       "echo \"Done Installing METplus\""
     ]
   }
+  provisioner "file" {
+    source      = "METconfig/environment.yml"
+    destination = "/tmp/environment.yml"
+  }
   # Install Miniconda & metplus dependencies
   provisioner "shell" {
     inline_shebang = "/bin/bash -e"
@@ -161,9 +165,11 @@ build {
       "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
       "source $HOME/miniconda/bin/activate && conda init",
       # Set up conda py_embed_base environment
-      "bash $HOME/METplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      // "bash $HOME/METplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      "cp /tmp/environment.yml $HOME/METplus/environment.yml",
+      "conda env create -f $HOME/METplus/environment.yml",
       # Activate conda env in user's .bashrc
-      "echo \"conda activate py_embed_base\" >> $HOME/.bashrc",
+      "echo \"conda activate metplus\" >> $HOME/.bashrc",
       # Tell MET to use miniconda Python
       "echo \"export MET_PYTHON_EXE=$(which python)\" >> $HOME/.bashrc",
       # Put MET & METplus on PATH
