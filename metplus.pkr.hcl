@@ -186,7 +186,7 @@ build {
       # OLR dataset
       "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
       # METplus S2S use case sample data
-      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv -C /metplus-data",
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xz -C /metplus-data",
       # Add BDP datasets 
       # For explanation of options, see: https://github.com/kahing/goofys 
       # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
