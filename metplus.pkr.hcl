@@ -96,7 +96,7 @@ build {
       "sudo yum -y install gv ncview wgrib wgrib2 ImageMagick ps2pdf",
       "sudo yum -y install python3 python3-devel python3-pip",
       "sudo pip3 install --upgrade pip",
-      "sudo python3 -m pip install numpy xarray netCDF4", #dateutil? 
+      "sudo python3 -m pip install numpy xarray netCDF4", # dateutil is pulled in by these dependencies
       "echo \"Done Installing packages\""
     ]
   }
