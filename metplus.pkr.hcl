@@ -96,7 +96,7 @@ build {
       "sudo yum -y install gv ncview wgrib wgrib2 ImageMagick ps2pdf",
       "sudo yum -y install python3 python3-devel python3-pip",
       "sudo pip3 install --upgrade pip",
-      "sudo python3 -m pip install numpy xarray netCDF4", #dateutil? 
+      "sudo python3 -m pip install numpy xarray netCDF4", # dateutil is pulled in by these dependencies
       "echo \"Done Installing packages\""
     ]
   }
@@ -134,7 +134,7 @@ build {
   }
   # TODO - create other users and do the below as them
   provisioner "file" {
-    sources     = ["METconfig/Externals.cfg", "METconfig/defaults.conf"]
+    source      = "METconfig/Externals.cfg"
     destination = "/tmp/"
   }
   provisioner "shell" {
@@ -144,37 +144,46 @@ build {
       "git clone https://github.com/dtcenter/METplus",
       # Copy our patched Externals.cfg into place
       "cp /tmp/Externals.cfg $HOME/METplus/build_components/Externals.cfg",
-      # METplus looks for the defaults.conf file using a relative path
-      "cp /tmp/defaults.conf $HOME/METplus/parm/metplus_config/defaults.conf",
+      # Update the defaults.conf with correct locations
+      "sed -i 's:MET_INSTALL_DIR=/path/to:MET_INSTALL_DIR=/opt/met:g' $HOME/METplus/parm/metplus_config/defaults.conf",
+      "sed -i 's:INPUT_BASE=/path/to:INPUT_BASE=/metplus-data:g' $HOME/METplus/parm/metplus_config/defaults.conf",
+      "sed -i 's:OUTPUT_BASE=/path/to:OUTPUT_BASE={ENV[HOME]}/metplus-output:g' $HOME/METplus/parm/metplus_config/defaults.conf",
       # TODO - switch to develop branch? https://metplus.readthedocs.io/en/latest/Contributors_Guide/github_workflow.html
       "cd METplus && manage_externals/checkout_externals -e build_components/Externals.cfg",
       "mkdir $HOME/metplus-output",
       "echo \"Done Installing METplus\""
     ]
   }
-  provisioner "file" {
-    source      = "METconfig/environment.yml"
-    destination = "/tmp/environment.yml"
-  }
-  # Install Miniconda & metplus dependencies
+  # Install Miniconda 
   provisioner "shell" {
     inline_shebang = "/bin/bash -e"
     inline = [
       "echo \"Installing miniconda\"",
       "wget -P /tmp https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh",
       "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
-      "source $HOME/miniconda/bin/activate && conda init",
-      # Set up conda py_embed_base environment
-      // "bash $HOME/METplus/scripts/docker/docker_env/scripts/py_embed_base_env.sh",
+      "source $HOME/miniconda/bin/activate && conda init bash",
+      "echo \"Done installing miniconda\""
+    ]
+  }
+  provisioner "file" {
+    source      = "METconfig/environment.yml"
+    destination = "/tmp/environment.yml"
+  }
+  # Restart shell for conda init to take affect & install metplus dependencies
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Installing metplus dependencies\"",
+      # Set up conda metplus environment
       "cp /tmp/environment.yml $HOME/METplus/environment.yml",
       "conda env create -f $HOME/METplus/environment.yml",
-      # Activate conda env in user's .bashrc
-      "echo \"conda activate metplus\" >> $HOME/.bashrc",
       # Tell MET to use miniconda Python
       "echo \"export MET_PYTHON_EXE=$(which python)\" >> $HOME/.bashrc",
       # Put MET & METplus on PATH
       "echo \"export PATH=/opt/met/bin:$HOME/METplus/ush:$PATH\" >> $HOME/.bashrc",
-      "echo \"Done installing miniconda\""
+      # Activate conda env in user's .bashrc
+      "echo \"conda activate metplus-hackathon\" >> $HOME/.bashrc",
+      "echo \"Done installing metplus dependencies\""
     ]
   }
   provisioner "shell" {
@@ -186,7 +195,7 @@ build {
       # OLR dataset
       "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
       # METplus S2S use case sample data
-      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xzv -C /metplus-data",
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xz -C /metplus-data",
       # Add BDP datasets 
       # For explanation of options, see: https://github.com/kahing/goofys 
       # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
