@@ -1,9 +1,15 @@
-name: metplus
+name: metplus-hackathon
 channels:
   - conda-forge
 dependencies:
-  - python=3.6.8
-  - python-dateutil=2.8.1
-  - xarray=0.16.2
-  - netcdf4=1.5.6
+  - python=3.8.10
+  - python-dateutil
+  - xarray
+  - netcdf4
   - numpy
+  - cartopy
+  - pyyaml
+  - scikit-learn
+  - eofs
+  - cmocean
+  - statsmodels
