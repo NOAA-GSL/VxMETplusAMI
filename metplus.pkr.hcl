@@ -171,7 +171,7 @@ build {
   }
   # Restart shell for conda init to take affect & install metplus dependencies
   provisioner "shell" {
-    inline_shebang = "bin/bash -e"
+    inline_shebang = "/bin/bash -e"
     inline = [
       "echo \"Installing metplus dependencies\"",
       # Set up conda metplus environment
