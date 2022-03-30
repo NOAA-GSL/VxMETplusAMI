@@ -132,7 +132,27 @@ build {
       "echo \"Done Installing editors & goofys\"",
     ]
   }
-  # TODO - create other users and do the below as them
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Setting up data\"",
+      "sudo mkdir -p /metplus-data/met_test",
+      "sudo mkdir -p /metplus-data/hackathon/olr /metplus-data/hackathon/ufs-s2s /metplus-data/hackathon/era5 /metplus-data/hackathon/gefs",
+      # OLR dataset
+      "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
+      # METplus S2S use case sample data
+      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xz -C /metplus-data",
+      # Add BDP datasets 
+      # For explanation of options, see: https://github.com/kahing/goofys 
+      # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
+      "echo \"goofys#noaa-ufs-prototypes-pds /metplus-data/hackathon/ufs-s2s fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
+      # ERA 5 data: https://registry.opendata.aws/ecmwf-era5/
+      "echo \"goofys#era5-pds /metplus-data/hackathon/era5 fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
+      # GEFS re-forecast data: https://registry.opendata.aws/noaa-gefs-reforecast/#usageexamples 
+      "echo \"goofys#noaa-gefs-retrospective /metplus-data/hackathon/gefs fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
+      "echo \"Done Setting up data\""
+    ]
+  }
   provisioner "file" {
     source      = "METconfig/Externals.cfg"
     destination = "/tmp/"
@@ -184,27 +204,6 @@ build {
       # Activate conda env in user's .bashrc
       "echo \"conda activate metplus-hackathon\" >> $HOME/.bashrc",
       "echo \"Done installing metplus dependencies\""
-    ]
-  }
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Setting up data\"",
-      "sudo mkdir -p /metplus-data/met_test",
-      "sudo mkdir -p /metplus-data/hackathon/olr /metplus-data/hackathon/ufs-s2s /metplus-data/hackathon/era5 /metplus-data/hackathon/gefs",
-      # OLR dataset
-      "sudo wget -P /metplus-data/hackathon/olr https://downloads.psl.noaa.gov/Datasets/interp_OLR/olr.day.mean.nc",
-      # METplus S2S use case sample data
-      "wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/METplus_Data/v4.1/sample_data-s2s-4.1.tgz | sudo tar -xz -C /metplus-data",
-      # Add BDP datasets 
-      # For explanation of options, see: https://github.com/kahing/goofys 
-      # UFS data: https://registry.opendata.aws/noaa-ufs-s2s/
-      "echo \"goofys#noaa-ufs-prototypes-pds /metplus-data/hackathon/ufs-s2s fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
-      # ERA 5 data: https://registry.opendata.aws/ecmwf-era5/
-      "echo \"goofys#era5-pds /metplus-data/hackathon/era5 fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
-      # GEFS re-forecast data: https://registry.opendata.aws/noaa-gefs-reforecast/#usageexamples 
-      "echo \"goofys#noaa-gefs-retrospective /metplus-data/hackathon/gefs fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
-      "echo \"Done Setting up data\""
     ]
   }
 }
