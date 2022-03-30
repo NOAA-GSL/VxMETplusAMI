@@ -151,32 +151,20 @@ build {
     source      = "METconfig/Externals.cfg"
     destination = "/tmp/"
   }
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Install METplus\"",
-      "git clone https://github.com/dtcenter/METplus",
-      # Copy our patched Externals.cfg into place
-      "cp /tmp/Externals.cfg $HOME/METplus/build_components/Externals.cfg",
-      # Update the defaults.conf with correct locations
-      "sed -i 's:MET_INSTALL_DIR=/path/to:MET_INSTALL_DIR=/opt/met:g' $HOME/METplus/parm/metplus_config/defaults.conf",
-      "sed -i 's:INPUT_BASE=/path/to:INPUT_BASE=/metplus-data:g' $HOME/METplus/parm/metplus_config/defaults.conf",
-      "sed -i 's:OUTPUT_BASE=/path/to:OUTPUT_BASE={ENV[HOME]}/metplus-output:g' $HOME/METplus/parm/metplus_config/defaults.conf",
-      # TODO - switch to develop branch? https://metplus.readthedocs.io/en/latest/Contributors_Guide/github_workflow.html
-      "cd METplus && manage_externals/checkout_externals -e build_components/Externals.cfg",
-      "mkdir $HOME/metplus-output",
-      "echo \"Done Installing METplus\""
+  provisioner "file" {
+    sources = [
+      "scripts/install_metplus.sh",
+      "scripts/install_miniconda.sh"
     ]
+    destination = "/tmp/"
   }
-  # Install Miniconda 
   provisioner "shell" {
     inline_shebang = "/bin/bash -e"
     inline = [
-      "echo \"Installing miniconda\"",
-      "wget -P /tmp https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh",
-      "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
-      "source $HOME/miniconda/bin/activate && conda init bash",
-      "echo \"Done installing miniconda\""
+      "echo \"Installing METplus\"",
+      "sudo -i -u user1 bash -c \"bash /tmp/install_metplus.sh; bash /tmp/install_miniconda.sh\"",
+      "sudo -i -u user2 bash -c \"bash /tmp/install_metplus.sh; bash /tmp/install_miniconda.sh\"",
+      "echo \"Done Installing METplus\""
     ]
   }
   provisioner "file" {
