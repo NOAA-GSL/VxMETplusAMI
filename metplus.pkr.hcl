@@ -129,6 +129,24 @@ build {
       "echo \"Done Setting up data\""
     ]
   }
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Creating users\"",
+      "sudo adduser user1",
+      "sudo adduser user2",
+      "sudo groupadd hackathon",
+      "sudo usermod -aG hackathon user1",
+      "sudo usermod -aG hackathon user2",
+      # Remove the user's password - otherwise CentOS requires one to be set
+      "sudo passwd -d user1",
+      "sudo passwd -d user2",
+      # Create a location for both users to share files
+      "sudo mkdir -p /hackathon-scratch",
+      "sudo setfacl --recursive --modify group:hackathon:rwX,default:group:hackathon:rwX /hackathon-scratch",
+      "echo \"Done Creating users\""
+    ]
+  }
   provisioner "file" {
     source      = "METconfig/Externals.cfg"
     destination = "/tmp/"
