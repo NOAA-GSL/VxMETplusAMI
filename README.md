@@ -48,7 +48,7 @@ This installation assumes:
     - Both users are part of the `hackathon` group
     - The rest of the METplus suite installed in $HOME
     - Miniconda set up for each user
-    - [A custom conda environment](./METconfig/environment.yml) enabled by default
+    - [A custom conda environment](./config/environment.yml) enabled by default
     - `MET_PYTHON_EXE` set to miniconda python
     - vim, nano, emacs are installed and X11 forwarding is enabled
     - A shared workspace in `/hackathon-scratch` with an ACL set so new files are read/writeable by the `hackathon` group

@@ -86,7 +86,7 @@ build {
     "source.amazon-ebs.centos7-latest"
   ]
   provisioner "file" {
-    source      = "METconfig/install_met_env.centos_aws"
+    source      = "config/install_met_env.centos_aws"
     destination = "/tmp/install_met_env.centos_aws"
   }
   provisioner "shell" {
@@ -148,7 +148,7 @@ build {
     ]
   }
   provisioner "file" {
-    source      = "METconfig/Externals.cfg"
+    source      = "config/Externals.cfg"
     destination = "/tmp/"
   }
   provisioner "file" {
@@ -168,7 +168,7 @@ build {
     ]
   }
   provisioner "file" {
-    source      = "METconfig/environment.yml"
+    source      = "config/environment.yml"
     destination = "/tmp/environment.yml"
   }
   provisioner "file" {
