@@ -85,38 +85,14 @@ build {
   sources = [
     "source.amazon-ebs.centos7-latest"
   ]
-  # Install inspired by the MET Dockerfile here: https://github.com/dtcenter/MET/blob/main_v10.0/scripts/docker/Dockerfile
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Installing required packages\"",
-      "sudo yum -y update",
-      "sudo yum -y install file gcc gcc-gfortran gcc-c++ glibc.i686 libgcc.i686 libpng-devel jasper jasper-devel zlib zlib-devel cairo-devel freetype-devel epel-release hostname m4 make tar tcsh ksh time which wget flex flex-devel bison bison-devel unzip",
-      "sudo yum -y install git g2clib-devel hdf5-devel.x86_64 gsl-devel",
-      "sudo yum -y install gv ncview wgrib wgrib2 ImageMagick ps2pdf",
-      "sudo yum -y install python3 python3-devel python3-pip",
-      "sudo pip3 install --upgrade pip",
-      "sudo python3 -m pip install numpy xarray netCDF4", # dateutil is pulled in by these dependencies
-      "echo \"Done Installing packages\""
-    ]
-  }
   provisioner "file" {
-    source      = "METconfig/install_met_env.centos_aws"
+    source      = "config/install_met_env.centos_aws"
     destination = "/tmp/install_met_env.centos_aws"
   }
   provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Install MET\"",
-      "sudo mkdir -p /opt/met/tar_files && cd /opt/met",
-      "sudo mv /tmp/install_met_env.centos_aws /opt/met/ && sudo chmod +x /opt/met/install_met_env.centos_aws",
-      "sudo wget https://raw.githubusercontent.com/dtcenter/MET/main_v10.1/scripts/installation/compile_MET_all.sh",
-      "sudo chmod 775 compile_MET_all.sh",
-      "sudo wget https://dtcenter.ucar.edu/dfiles/code/METplus/MET/installation/tar_files.tgz",
-      "sudo tar -zxf tar_files.tgz && sudo rm tar_files.tgz",
-      "sudo wget -P /opt/met/tar_files https://github.com/dtcenter/MET/releases/download/v10.1.0/met-10.1.0.20220314.tar.gz",
-      "sudo bash compile_MET_all.sh install_met_env.centos_aws",
-      "echo \"Done Installing MET\""
+    execute_command = "sudo bash -c '{{ .Vars }} {{ .Path }}'"
+    scripts = [
+      "scripts/install_met.sh"
     ]
   }
   # User Setup
@@ -130,60 +106,6 @@ build {
       "sudo yum -y install fuse fuse-libs", # Make fuse available for goofys
       "sudo wget -P /usr/local/bin https://github.com/kahing/goofys/releases/download/v0.24.0/goofys && sudo chmod +x /usr/local/bin/goofys",
       "echo \"Done Installing editors & goofys\"",
-    ]
-  }
-  # TODO - create other users and do the below as them
-  provisioner "file" {
-    source      = "METconfig/Externals.cfg"
-    destination = "/tmp/"
-  }
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Install METplus\"",
-      "git clone https://github.com/dtcenter/METplus",
-      # Copy our patched Externals.cfg into place
-      "cp /tmp/Externals.cfg $HOME/METplus/build_components/Externals.cfg",
-      # Update the defaults.conf with correct locations
-      "sed -i 's:MET_INSTALL_DIR=/path/to:MET_INSTALL_DIR=/opt/met:g' $HOME/METplus/parm/metplus_config/defaults.conf",
-      "sed -i 's:INPUT_BASE=/path/to:INPUT_BASE=/metplus-data:g' $HOME/METplus/parm/metplus_config/defaults.conf",
-      "sed -i 's:OUTPUT_BASE=/path/to:OUTPUT_BASE={ENV[HOME]}/metplus-output:g' $HOME/METplus/parm/metplus_config/defaults.conf",
-      # TODO - switch to develop branch? https://metplus.readthedocs.io/en/latest/Contributors_Guide/github_workflow.html
-      "cd METplus && manage_externals/checkout_externals -e build_components/Externals.cfg",
-      "mkdir $HOME/metplus-output",
-      "echo \"Done Installing METplus\""
-    ]
-  }
-  # Install Miniconda 
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Installing miniconda\"",
-      "wget -P /tmp https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh",
-      "bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda",
-      "source $HOME/miniconda/bin/activate && conda init bash",
-      "echo \"Done installing miniconda\""
-    ]
-  }
-  provisioner "file" {
-    source      = "METconfig/environment.yml"
-    destination = "/tmp/environment.yml"
-  }
-  # Restart shell for conda init to take affect & install metplus dependencies
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Installing metplus dependencies\"",
-      # Set up conda metplus environment
-      "cp /tmp/environment.yml $HOME/METplus/environment.yml",
-      "conda env create -f $HOME/METplus/environment.yml",
-      # Tell MET to use miniconda Python
-      "echo \"export MET_PYTHON_EXE=$(which python)\" >> $HOME/.bashrc",
-      # Put MET & METplus on PATH
-      "echo \"export PATH=/opt/met/bin:$HOME/METplus/ush:$PATH\" >> $HOME/.bashrc",
-      # Activate conda env in user's .bashrc
-      "echo \"conda activate metplus-hackathon\" >> $HOME/.bashrc",
-      "echo \"Done installing metplus dependencies\""
     ]
   }
   provisioner "shell" {
@@ -205,6 +127,62 @@ build {
       # GEFS re-forecast data: https://registry.opendata.aws/noaa-gefs-reforecast/#usageexamples 
       "echo \"goofys#noaa-gefs-retrospective /metplus-data/hackathon/gefs fuse _netdev,allow_other,--file-mode=0444,--dir-mode=0555 0 0\" | sudo tee -a /etc/fstab",
       "echo \"Done Setting up data\""
+    ]
+  }
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Creating users\"",
+      "sudo adduser user1",
+      "sudo adduser user2",
+      "sudo groupadd hackathon",
+      "sudo usermod -aG hackathon user1",
+      "sudo usermod -aG hackathon user2",
+      # Remove the user's password - otherwise CentOS requires one to be set
+      "sudo passwd -d user1",
+      "sudo passwd -d user2",
+      # Create a location for both users to share files
+      "sudo mkdir -p /hackathon-scratch",
+      "sudo setfacl --recursive --modify group:hackathon:rwX,default:group:hackathon:rwX /hackathon-scratch",
+      "echo \"Done Creating users\""
+    ]
+  }
+  provisioner "file" {
+    source      = "config/Externals.cfg"
+    destination = "/tmp/"
+  }
+  provisioner "file" {
+    sources = [
+      "scripts/install_metplus.sh",
+      "scripts/install_miniconda.sh"
+    ]
+    destination = "/tmp/"
+  }
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Installing METplus\"",
+      "sudo -i -u user1 bash -c \"bash /tmp/install_metplus.sh; bash /tmp/install_miniconda.sh\"",
+      "sudo -i -u user2 bash -c \"bash /tmp/install_metplus.sh; bash /tmp/install_miniconda.sh\"",
+      "echo \"Done Installing METplus\""
+    ]
+  }
+  provisioner "file" {
+    source      = "config/environment.yml"
+    destination = "/tmp/environment.yml"
+  }
+  provisioner "file" {
+    source      = "scripts/setup_conda_env.sh"
+    destination = "/tmp/setup_conda_env.sh"
+  }
+  # Restart shell for conda init to take affect & install metplus dependencies
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "echo \"Installing metplus dependencies\"",
+      "sudo -i -u user1 bash -c \"bash /tmp/setup_conda_env.sh\"",
+      "sudo -i -u user2 bash -c \"bash /tmp/setup_conda_env.sh\"",
+      "echo \"Done installing metplus dependencies\""
     ]
   }
 }
