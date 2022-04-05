@@ -3,6 +3,8 @@ Hashicorp Packer files for creating a METplus AMI for the METplus 2022 Hackathon
 
 ## Getting started
 
+### Creating the AMI
+
 ```console
 # Define the required variables in a file
 $ cat << EOF > vars.auto.pkrvars.hcl
@@ -25,6 +27,10 @@ $ packer build metplus.pkr.hcl
 ```
 
 The build will take roughly an hour to download and configure everything.
+
+### Starting an instance from the AMI
+
+You will need to do some further setup to install METplus and configure the conda environment for both users. A sample [`user-data.sh` script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-shell-scripts) is provided in the root of the repo for this purpose. It can be used to configure new instances at launch time.
 
 ## Development
 

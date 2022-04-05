@@ -148,41 +148,13 @@ build {
     ]
   }
   provisioner "file" {
-    source      = "config/Externals.cfg"
-    destination = "/tmp/"
-  }
-  provisioner "file" {
     sources = [
+      "config/Externals.cfg",
+      "config/environment.yml",
       "scripts/install_metplus.sh",
-      "scripts/install_miniconda.sh"
+      "scripts/install_miniconda.sh",
+      "scripts/setup_conda_env.sh"
     ]
     destination = "/tmp/"
-  }
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Installing METplus\"",
-      "sudo -i -u user1 bash -c \"bash /tmp/install_metplus.sh; bash /tmp/install_miniconda.sh\"",
-      "sudo -i -u user2 bash -c \"bash /tmp/install_metplus.sh; bash /tmp/install_miniconda.sh\"",
-      "echo \"Done Installing METplus\""
-    ]
-  }
-  provisioner "file" {
-    source      = "config/environment.yml"
-    destination = "/tmp/environment.yml"
-  }
-  provisioner "file" {
-    source      = "scripts/setup_conda_env.sh"
-    destination = "/tmp/setup_conda_env.sh"
-  }
-  # Restart shell for conda init to take affect & install metplus dependencies
-  provisioner "shell" {
-    inline_shebang = "/bin/bash -e"
-    inline = [
-      "echo \"Installing metplus dependencies\"",
-      "sudo -i -u user1 bash -c \"bash /tmp/setup_conda_env.sh\"",
-      "sudo -i -u user2 bash -c \"bash /tmp/setup_conda_env.sh\"",
-      "echo \"Done installing metplus dependencies\""
-    ]
   }
 }
