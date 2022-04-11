@@ -27,5 +27,6 @@ wget -P /opt/met https://raw.githubusercontent.com/dtcenter/MET/main_v10.1/scrip
 chmod 775 /opt/met/compile_MET_all.sh
 wget -qO - https://dtcenter.ucar.edu/dfiles/code/METplus/MET/installation/tar_files.tgz | tar -xz -C /opt/met
 wget -P /opt/met/tar_files https://github.com/dtcenter/MET/releases/download/v10.1.0/met-10.1.0.20220314.tar.gz
-# TODO - does this still work?
+
+# Install MET
 bash /opt/met/compile_MET_all.sh /opt/met/install_met_env.centos_aws
