@@ -17,3 +17,5 @@ sed -i 's:OUTPUT_BASE = /path/to:OUTPUT_BASE = {ENV[HOME]}/metplus-output:g' $HO
 
 cd METplus && manage_externals/checkout_externals -e build_components/Externals.cfg
 mkdir $HOME/metplus-output
+
+echo "export PYTHONPATH=$HOME/METcalcpy:$HOME/METdatadb:$HOME/METplotpy" >> $HOME/.bashrc
