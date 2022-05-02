@@ -22,7 +22,7 @@ variable "tags" {
 }
 
 variable "instance_type" {
-  type = string
+  type    = string
   default = "t3.medium"
 }
 
@@ -53,15 +53,15 @@ data "amazon-ami" "centos7-east" {
 }
 
 source "amazon-ebs" "centos7-latest" {
-  ami_name           = "metplus-hackathon-centos7-{{ timestamp }}"
-  instance_type      = var.instance_type
-  ssh_username       = "centos"
-  region             = "us-east-1"
-  source_ami         = "ami-0c67670cb7a4d6ce8" # CIS-Hardened-CentOS-With-DCV
-  // source_ami         = "ami-0c87909a054cba04a" # CIS-Hardened-CentOS-72022-03-16T19-46-56.775Z
-  // source_ami         = data.amazon-ami.centos7-east.id
-  subnet_id          = "subnet-0e5d1a56db063be4d"
-  // subnet_id          = var.subnet_id
+  ami_name      = "metplus-hackathon-centos7-{{ timestamp }}"
+  instance_type = var.instance_type
+  ssh_username  = "centos"
+  region        = "us-east-1"
+  source_ami    = "ami-0c67670cb7a4d6ce8" # CIS-Hardened-CentOS-With-DCV
+  // source_ami = "ami-0c87909a054cba04a" # CIS-Hardened-CentOS-72022-03-16T19-46-56.775Z
+  // source_ami = data.amazon-ami.centos7-east.id
+  subnet_id = "subnet-0e5d1a56db063be4d"
+  // subnet_id  = var.subnet_id
   // security_group_ids = var.security_group_ids # VLab uses the iam_instance_profile below instead
   iam_instance_profile = "AmazonSSMManagedInstanceCore"
   launch_block_device_mappings {
